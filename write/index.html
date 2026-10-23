@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>写点东西</title>
+<style>
+  :root{
+    --bg:#f7f4ef; --card:#fffdf9; --ink:#3a3630; --ink-soft:#7a7268;
+    --line:#e7e0d5; --accent:#c98b6b; --accent-soft:#f3e3d8;
+    --ok:#5f8f6a; --bad:#c4574c; --code:#f2ece3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:16px; line-height:1.7; -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:18px 16px 60px}
+  h1.logo{font-size:20px;margin:6px 0 2px;font-weight:600;letter-spacing:.5px}
+  .sub{color:var(--ink-soft);font-size:13px;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  label{display:block;font-size:13px;color:var(--ink-soft);margin:12px 0 6px}
+  input[type=text],input[type=password],textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+    background:#fff;color:var(--ink);font:inherit;font-size:15px;outline:none;
+  }
+  input:focus,textarea:focus{border-color:var(--accent)}
+  textarea{min-height:44vh;resize:vertical;line-height:1.75;font-size:15px}
+  button{
+    font:inherit;font-size:15px;padding:9px 16px;border-radius:10px;cursor:pointer;
+    border:1px solid var(--line);background:#fff;color:var(--ink);transition:.15s;
+  }
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.ghost{background:transparent}
+  button.danger{color:var(--bad);border-color:#e8cdc9}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row .grow{flex:1}
+  .hidden{display:none !important}
+  .list-item{
+    padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;
+    background:#fff;cursor:pointer;transition:.15s;
+  }
+  .list-item:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .list-item .t{font-weight:600}
+  .list-item .m{font-size:12px;color:var(--ink-soft);margin-top:3px}
+  #status{
+    position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+    background:#3a3630;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;
+    opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:90vw;text-align:center;
+  }
+  #status.show{opacity:.96}
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tab{padding:6px 14px;border-radius:9px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:14px;color:var(--ink-soft)}
+  .tab.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+  .preview{min-height:44vh;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;background:#fffdf9;overflow-wrap:break-word}
+  .preview h1,.preview h2,.preview h3{line-height:1.4;margin:1.2em 0 .5em}
+  .preview h1{font-size:24px}.preview h2{font-size:20px}.preview h3{font-size:17px}
+  .preview p{margin:.7em 0}
+  .preview code{background:var(--code);padding:2px 6px;border-radius:5px;font-size:14px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .preview pre{background:var(--code);padding:12px;border-radius:9px;overflow:auto}
+  .preview pre code{background:none;padding:0}
+  .preview blockquote{margin:.8em 0;padding:2px 14px;border-left:3px solid var(--accent-soft);color:var(--ink-soft)}
+  .preview img{max-width:100%;border-radius:8px}
+  .preview hr{border:none;border-top:1px solid var(--line);margin:1.4em 0}
+  .preview table{border-collapse:collapse}
+  .preview td,.preview th{border:1px solid var(--line);padding:6px 10px}
+  .small{font-size:13px;color:var(--ink-soft)}
+  .gear{float:right;cursor:pointer;color:var(--ink-soft);font-size:13px;user-select:none}
+  .top-bar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  @media (max-width:600px){
+    .preview{min-height:50vh}
+    button{padding:10px 14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 登录 ===== -->
+  <div id="viewLogin">
+    <div class="top-bar">
+      <div>
+        <h1 class="logo">写点东西</h1>
+        <div class="sub">只有你知道密码的地方</div>
+      </div>
+      <span class="gear" id="gear">设置</span>
+    </div>
+
+    <div class="card" id="cfgBox" style="display:none">
+      <label>接口地址（一般不用改）</label>
+      <input type="text" id="apiUrl" placeholder="https://xxx.service.tcloudbase.com/blog-write">
+      <div class="small" style="margin-top:8px">部署云函数后会拿到这个地址，填错就保存不了。</div>
+    </div>
+
+    <div class="card">
+      <label>密码</label>
+      <input type="password" id="pass" placeholder="输入密码" autocomplete="current-password">
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="btnLogin">进来</button>
+        <button class="ghost" id="btnRemember" title="记住这台设备的密码">记住密码</button>
+      </div>
+      <div class="small" style="margin-top:10px">「记住密码」只在当前浏览器，换设备要重新输。</div>
+    </div>
+  </div>
+
+  <!-- ===== 草稿列表 ===== -->
+  <div id="viewList" class="hidden">
+    <div class="top-bar">
+      <div>
+        <h1 class="logo">草稿箱</h1>
+        <div class="sub">点一篇继续写</div>
+      </div>
+      <span class="gear" id="btnLogout">锁上</span>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <button class="primary" id="btnNew">＋ 新建</button>
+        <button class="ghost" id="btnRefresh">刷新</button>
+        <span class="grow"></span>
+        <span class="small" id="listMeta"></span>
+      </div>
+      <div id="listBody"><div class="small">读取中…</div></div>
+    </div>
+  </div>
+
+  <!-- ===== 编辑 ===== -->
+  <div id="viewEdit" class="hidden">
+    <div class="top-bar">
+      <div>
+        <h1 class="logo">写点东西</h1>
+        <div class="sub" id="editMeta">未保存</div>
+      </div>
+      <span class="gear" id="btnBack">← 草稿箱</span>
+    </div>
+
+    <div class="card">
+      <label>标题</label>
+      <input type="text" id="fTitle" placeholder="想个标题">
+      <div class="row" style="gap:12px">
+        <div style="flex:2;min-width:180px">
+          <label>文件名（留空自动用标题）</label>
+          <input type="text" id="fSlug" placeholder="my-post">
+        </div>
+        <div style="flex:1;min-width:140px">
+          <label>标签（逗号分隔）</label>
+          <input type="text" id="fTags" placeholder="生活,随想">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <span class="tab on" data-tab="write">写</span>
+        <span class="tab" data-tab="preview">看效果</span>
+        <span class="grow"></span>
+        <button class="primary" id="btnSave">保存</button>
+      </div>
+      <div id="paneWrite"><textarea id="fBody" placeholder="开始写…&#10;&#10;# 一级标题&#10;**加粗** 和 *斜体*&#10;- 列表项"></textarea></div>
+      <div id="panePreview" class="preview hidden"></div>
+      <div class="row" style="margin-top:12px">
+        <span class="small">Ctrl/⌘ + S 直接保存</span>
+        <span class="grow"></span>
+        <button class="danger" id="btnDel">删除这篇</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="status"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DEFAULT_API = "https://blog-d8gymma8tcb7056d1-1512645817.ap-shanghai.app.tcloudbase.com/blog-write";
+  var API_KEY = "nbr_write_api";
+  var REMEMBER_KEY = "nbr_write_pass";
+
+  var el = function(id){ return document.getElementById(id); };
+  var view = { login:el("viewLogin"), list:el("viewList"), edit:el("viewEdit") };
+  var state = { drafts:[], current:null, dirty:false };
+
+  function show(name){
+    for (var k in view){ if (view.hasOwnProperty(k)) view[k].classList.add("hidden"); }
+    view[name].classList.remove("hidden");
+    window.scrollTo(0,0);
+  }
+
+  var timer = null;
+  function toast(msg, bad){
+    var s = el("status");
+    s.textContent = msg;
+    s.style.background = bad ? "#c4574c" : "#3a3630";
+    s.classList.add("show");
+    clearTimeout(timer);
+    timer = setTimeout(function(){ s.classList.remove("show"); }, 2200);
+  }
+
+  function apiUrl(){
+    return (localStorage.getItem(API_KEY) || DEFAULT_API).replace(/\/+$/, "");
+  }
+
+  /** 所有请求统一走这里：密码不对会拿到 401 */
+  function call(body){
+    var saved = sessionStorage.getItem("pw") || localStorage.getItem(REMEMBER_KEY) || "";
+    body.pass = saved;
+    return fetch(apiUrl(), {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    }).then(function(r){
+      return r.json().catch(function(){ return { ok:false, error:"bad-json" }; });
+    }).then(function(data){
+      if (data && data.statusCode === 401) data.ok = false;
+      return data;
+    });
+  }
+
+  function fmtTime(ms){
+    if (!ms) return "";
+    var d = new Date(ms);
+    var p = function(n){ return n < 10 ? "0"+n : ""+n; };
+    return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c];
+    });
+  }
+
+  /** 极简 Markdown 渲染：够自己写文章用，不引外部库 */
+  function md(src){
+    var lines = String(src || "").split("\n");
+    var out = [];
+    var inCode = false, codeBuf = [], fence = "";
+    var para = [], listType = null, listBuf = [];
+
+    function flushPara(){
+      if (!para.length) return;
+      out.push("<p>" + inline(para.join("<br>")) + "</p>");
+      para = [];
+    }
+    function flushList(){
+      if (!listBuf.length) return;
+      var tag = listType === "ol" ? "ol" : "ul";
+      out.push("<" + tag + ">" + listBuf.map(function(x){ return "<li>" + inline(x) + "</li>"; }).join("") + "</" + tag + ">");
+      listBuf = []; listType = null;
+    }
+    function flushAll(){ flushPara(); flushList(); }
+
+    function inline(s){
+      var t = escapeHtml(s);
+      // 行内代码先占位，避免被后面的规则改坏
+      var codes = [];
+      t = t.replace(/`([^`]+)`/g, function(_, c){ codes.push(c); return "\u0000" + (codes.length-1) + "\u0000"; });
+      t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function(_, alt, url){
+            return '<img alt="' + alt + '" src="' + url + '">';
+          });
+      t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function(_, txt, url){
+            return '<a href="' + url + '" target="_blank" rel="noopener">' + txt + "</a>";
+          });
+      t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+      t = t.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+      t = t.replace(/\u0000(\d+)\u0000/g, function(_, i){ return "<code>" + escapeHtml(codes[i]) + "</code>"; });
+      return t;
+    }
+
+    for (var i = 0; i < lines.length; i++){
+      var line = lines[i];
+
+      if (/^\s*```/.test(line)){
+        if (!inCode){ flushAll(); inCode = true; fence = line.trim().slice(3); codeBuf = []; }
+        else {
+          out.push("<pre><code>" + escapeHtml(codeBuf.join("\n")) + "</code></pre>");
+          inCode = false;
+        }
+        continue;
+      }
+      if (inCode){ codeBuf.push(line); continue; }
+
+      if (/^\s*$/.test(line)){ flushAll(); continue; }
+
+      var h = line.match(/^(#{1,6})\s+(.*)$/);
+      if (h){ flushAll(); out.push("<h" + h[1].length + ">" + inline(h[2]) + "</h" + h[1].length + ">"); continue; }
+
+      if (/^\s*(---|\*\*\*)\s*$/.test(line)){ flushAll(); out.push("<hr>"); continue; }
+
+      var q = line.match(/^&gt;\s?(.*)$/) || line.match(/^>\s?(.*)$/);
+      if (q){ flushAll(); out.push("<blockquote>" + inline(q[1]) + "</blockquote>"); continue; }
+
+      var ul = line.match(/^\s*[-*+]\s+(.*)$/);
+      var ol = line.match(/^\s*\d+\.\s+(.*)$/);
+      if (ul || ol){
+        var want = ol ? "ol" : "ul";
+        if (listType && listType !== want) flushList();
+        listType = want;
+        listBuf.push((ol ? ol[1] : ul[1]));
+        continue;
+      }
+
+      flushList();
+      para.push(line);
+    }
+
+    if (inCode) out.push("<pre><code>" + escapeHtml(codeBuf.join("\n")) + "</code></pre>");
+    flushAll();
+    return out.join("\n");
+  }
+
+  // ===== 登录 =====
+  el("gear").onclick = function(){
+    var box = el("cfgBox");
+    box.style.display = box.style.display === "none" ? "block" : "none";
+  };
+  el("apiUrl").value = apiUrl();
+  el("apiUrl").onchange = function(){ localStorage.setItem(API_KEY, this.value.trim()); };
+
+  el("btnLogin").onclick = function(){
+    var p = el("pass").value;
+    if (!p) return toast("先输密码", true);
+    sessionStorage.setItem("pw", p);
+    call({ action:"list" }).then(function(d){
+      if (!d || !d.ok){
+        sessionStorage.removeItem("pw");
+        var msg = d && d.error === "bad-password" ? "密码不对" : (d && d.error === "server-not-configured" ? "云端还没配好密码" : "连不上云端");
+        return toast(msg, true);
+      }
+      localStorage.removeItem(REMEMBER_KEY);
+      if (el("btnRemember").dataset.on === "1") localStorage.setItem(REMEMBER_KEY, p);
+      state.drafts = d.drafts || [];
+      renderList();
+      show("list");
+    });
+  };
+
+  el("pass").addEventListener("keydown", function(e){ if (e.key === "Enter") el("btnLogin").click(); });
+
+  el("btnRemember").onclick = function(){
+    this.dataset.on = this.dataset.on === "1" ? "0" : "1";
+    this.style.background = this.dataset.on === "1" ? "var(--accent-soft)" : "";
+    this.textContent = this.dataset.on === "1" ? "已记住 ✓" : "记住密码";
+  };
+
+  el("btnLogout").onclick = function(){
+    sessionStorage.removeItem("pw");
+    localStorage.removeItem(REMEMBER_KEY);
+    el("btnRemember").dataset.on = "0";
+    el("btnRemember").textContent = "记住密码";
+    el("btnRemember").style.background = "";
+    show("login");
+  };
+
+  // ===== 列表 =====
+  function renderList(){
+    var box = el("listBody");
+    el("listMeta").textContent = state.drafts.length + " 篇";
+    if (!state.drafts.length){
+      box.innerHTML = '<div class="small">还没有草稿，点上面「新建」。</div>';
+      return;
+    }
+    box.innerHTML = "";
+    state.drafts.forEach(function(d){
+      var item = document.createElement("div");
+      item.className = "list-item";
+      item.innerHTML = '<div class="t"></div><div class="m"></div>';
+      item.querySelector(".t").textContent = d.title || "(无标题)";
+      item.querySelector(".m").textContent = fmtTime(d.updated) + " · " + (d.words || 0) + " 字";
+      item.onclick = function(){ openDraft(d.id); };
+      box.appendChild(item);
+    });
+  }
+
+  el("btnRefresh").onclick = function(){
+    call({ action:"list" }).then(function(d){
+      if (!d || !d.ok) return toast("读不到草稿", true);
+      state.drafts = d.drafts || [];
+      renderList();
+      toast("已刷新");
+    });
+  };
+
+  el("btnNew").onclick = function(){
+    state.current = { id:null, title:"", slug:"", tags:[], content:"" };
+    fillForm();
+    setTab("write");
+    show("edit");
+  };
+
+  el("btnBack").onclick = function(){
+    if (state.dirty && !confirm("还没保存，确定离开？")) return;
+    el("btnRefresh").click();
+    show("list");
+  };
+
+  // ===== 编辑 =====
+  function fillForm(){
+    var c = state.current;
+    el("fTitle").value = c.title || "";
+    el("fSlug").value = c.slug || "";
+    el("fTags").value = (c.tags || []).join(", ");
+    el("fBody").value = c.content || "";
+    state.dirty = false;
+    el("editMeta").textContent = c.id ? ("上次保存 " + fmtTime(c.updated)) : "还没保存过";
+    renderPreview();
+  }
+
+  function setTab(name){
+    document.querySelectorAll(".tab").forEach(function(t){
+      t.classList.toggle("on", t.dataset.tab === name);
+    });
+    el("paneWrite").classList.toggle("hidden", name !== "write");
+    el("panePreview").classList.toggle("hidden", name !== "preview");
+  }
+
+  document.querySelectorAll(".tab").forEach(function(t){
+    t.onclick = function(){
+      var name = t.dataset.tab;
+      if (name === "preview") renderPreview();
+      setTab(name);
+    };
+  });
+
+  function renderPreview(){
+    el("panePreview").innerHTML = md(el("fBody").value) || '<div class="small">左边写下点东西</div>';
+  }
+
+  ["fTitle","fSlug","fTags","fBody"].forEach(function(id){
+    el(id).addEventListener("input", function(){
+      state.dirty = true;
+      el("editMeta").textContent = "有改动没保存";
+    });
+  });
+
+  function openDraft(id){
+    call({ action:"get", id:id }).then(function(d){
+      if (!d || !d.ok) return toast("打不开这篇", true);
+      state.current = d.draft;
+      fillForm();
+      setTab("write");
+      show("edit");
+    });
+  }
+
+  el("btnSave").onclick = function(){
+    var tags = el("fTags").value.split(/[,，]/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var body = {
+      action:"save",
+      title: el("fTitle").value.trim(),
+      slug: el("fSlug").value.trim(),
+      tags: tags,
+      content: el("fBody").value
+    };
+    if (state.current && state.current.id) body.id = state.current.id;
+
+    el("btnSave").disabled = true;
+    call(body).then(function(d){
+      el("btnSave").disabled = false;
+      if (!d || !d.ok) return toast("保存失败：" + ((d && d.error) || "未知原因"), true);
+      if (!state.current.id) state.current.id = d.id;
+      state.current.title = body.title;
+      state.current.slug = body.slug;
+      state.current.tags = tags;
+      state.current.content = body.content;
+      state.current.updated = d.updated;
+      state.dirty = false;
+      el("editMeta").textContent = "已保存 " + fmtTime(d.updated);
+      toast("存好了");
+    });
+  };
+
+  el("btnDel").onclick = function(){
+    if (!state.current || !state.current.id) return toast("这篇还没存过", true);
+    if (!confirm("删掉《" + (state.current.title || "无标题") + "》？删了找不回来")) return;
+    call({ action:"delete", id:state.current.id }).then(function(d){
+      if (!d || !d.ok) return toast("删除失败", true);
+      toast("删掉了");
+      el("btnRefresh").click();
+      show("list");
+    });
+  };
+
+  document.addEventListener("keydown", function(e){
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s"){
+      if (!view.edit.classList.contains("hidden")){
+        e.preventDefault();
+        el("btnSave").click();
+      }
+    }
+  });
+
+  // 记住过密码就顺手填好，少输一次
+  var remembered = localStorage.getItem(REMEMBER_KEY);
+  if (remembered){
+    el("btnRemember").dataset.on = "1";
+    el("btnRemember").textContent = "已记住 ✓";
+    el("btnRemember").style.background = "var(--accent-soft)";
+    el("pass").value = remembered;
+  }
+})();
+</script>
+</body>
+</html>
